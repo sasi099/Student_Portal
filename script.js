@@ -1,4 +1,4 @@
- 
+
 // Master Login Credentials
 const MASTER_USERNAME = 'sasi099';
 const MASTER_PASSWORD = 'sasi099';
@@ -49,6 +49,7 @@ function handleLogin(event) {
     closeLoginModal();
     alert('✅ Successfully logged in as Master!');
     updateUploadButtons();
+    updateMasterLoginButton();
   } else {
     const errorEl = document.getElementById('loginError');
     if (errorEl) {
@@ -63,6 +64,8 @@ function masterLogout() {
   document.body.classList.remove('master-logged-in');
   alert('Logged out successfully');
   updateUploadButtons();
+  updateMasterLoginButton();
+  location.reload();
 }
 
 function updateUploadButtons() {
@@ -235,6 +238,18 @@ function loadSubjectFiles(branch) {
   });
 }
 
+function updateMasterLoginButton() {
+  const loginDiv = document.querySelector('.master-login');
+  if (loginDiv) {
+    if (isMasterLoggedIn()) {
+      loginDiv.innerHTML = '<button class="master-logout-btn" onclick="masterLogout()">Master Logout</button>';
+    } else {
+      loginDiv.innerHTML = '<button class="master-login-btn" onclick="showLoginModal()">Master Login</button>';
+    }
+  }
+}
+
+
 // expose functions for inline onclick attributes
 window.showYear = showYear;
 window.uploadSubjectFile = uploadSubjectFile;
@@ -250,7 +265,7 @@ window.loadSubjectFiles = loadSubjectFiles;
 document.addEventListener('DOMContentLoaded', function() {
   updateUploadButtons();
   convertSubjectListsToNewFormat();
-  createMasterLoginButton();
+  updateMasterLoginButton();
   // Load subject files for current branch (from localStorage)
   const branch = window.location.pathname.includes('CSE') ? 'CSE' : 
                  window.location.pathname.includes('ECE') ? 'ECE' : 
@@ -258,67 +273,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if (branch) loadSubjectFiles(branch);
 });
 
-// Create master login/logout button in the header
-function createMasterLoginButton() {
-  // Check if button already exists
-  if (document.getElementById('masterLoginBtn')) return;
-  
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.top = '12px';
-  container.style.right = '12px';
-  container.style.zIndex = '9999';
-  container.style.display = 'flex';
-  container.style.alignItems = 'center';
-  container.style.gap = '10px';
-  
-  if (isMasterLoggedIn()) {
-    const badge = document.createElement('span');
-    badge.className = 'master-badge';
-    badge.textContent = '✓ Master Logged In';
-    badge.style.backgroundColor = '#4CAF50';
-    badge.style.color = 'white';
-    badge.style.padding = '8px 12px';
-    badge.style.borderRadius = '4px';
-    badge.style.fontSize = '14px';
-    
-    const logoutBtn = document.createElement('button');
-    logoutBtn.id = 'masterLoginBtn';
-    logoutBtn.className = 'master-logout-btn';
-    logoutBtn.textContent = 'Logout';
-    logoutBtn.style.padding = '8px 16px';
-    logoutBtn.style.backgroundColor = '#f44336';
-    logoutBtn.style.color = 'white';
-    logoutBtn.style.border = 'none';
-    logoutBtn.style.borderRadius = '4px';
-    logoutBtn.style.cursor = 'pointer';
-    logoutBtn.style.fontWeight = 'bold';
-    logoutBtn.onclick = function() {
-      masterLogout();
-      location.reload();
-    };
-    
-    container.appendChild(badge);
-    container.appendChild(logoutBtn);
-  } else {
-    const loginBtn = document.createElement('button');
-    loginBtn.id = 'masterLoginBtn';
-    loginBtn.className = 'master-login-btn';
-    loginBtn.textContent = '🔐 Master Login';
-    loginBtn.style.padding = '8px 16px';
-    loginBtn.style.backgroundColor = '#4a6fa5';
-    loginBtn.style.color = 'white';
-    loginBtn.style.border = 'none';
-    loginBtn.style.borderRadius = '4px';
-    loginBtn.style.cursor = 'pointer';
-    loginBtn.style.fontWeight = 'bold';
-    loginBtn.onclick = showLoginModal;
-    
-    container.appendChild(loginBtn);
-  }
-  
-  document.body.appendChild(container);
-}
 
 // Generic upload helper for existing "Upload" buttons which ask for a subject
 function uploadFile(branch) {
