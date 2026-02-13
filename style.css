@@ -325,3 +325,59 @@ body.master-logged-in .delete-btn {
     text-align: center;
     padding: 20px 0;
 }
+
+.sidebar {
+    background: linear-gradient(
+      to bottom,
+      #4a6fa5 0%,
+      #6fa8d6 50%,
+      #a8d5f5 100%
+    );
+    padding: 20px;
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .sidebar button {
+  
+    background-color: #6f757575;
+    color: #fffdfd;
+    padding: 15px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: 'Times New Roman';
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+  
+  
+  .sidebar button:hover {
+    background-color: #747d8c;
+  }
+  
+  /* Content Area */
+  .content-area {
+    flex: 1;
+    padding: 20px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(168, 213, 245, 0.3) 100%);
+  }
+  
+  .year-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .year-content.active {
+    display: block;
+  }
+
+  #AIMLQuestionList li {
+    font-size: 1.1em;
+    font-weight: bold;
+  }
+  #AIMLMaterialList li {
+    font-size: 0.95em;
+    font-weight: bold;
+  }
