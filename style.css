@@ -3,15 +3,27 @@ body {
     font-weight: 400;
     margin: 0;
     padding: 0;
-    background: linear-gradient(45deg, #001a4d, #4a6fa5);
-    background-size: cover;
-    background-attachment: fixed;
+    color: #fff;
+    background: linear-gradient(-45deg, #001a4d, #4a6fa5, #2c3e50, #8e44ad);
+    background-size: 400% 400%;
+    animation: wavy-gradient 15s ease infinite;
     min-height: 100vh;
-    color: #001a4d; /* Deep Navy */
+}
+
+@keyframes wavy-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 header {
-    background-color: rgba(255, 255, 255, 0.1); /* Glassy background */
+    background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
@@ -54,17 +66,17 @@ main {
 
 section {
     margin-bottom: 30px;
-    background: rgba(255, 255, 255, 0.8); /* White with transparency */
+    background: rgba(255, 255, 255, 0.8);
     padding: 20px;
     border-radius: 40px;
-    color: #001a4d; /* Deep Navy */
+    color: #001a4d;
     box-shadow: 0 2px 5px rgb(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
 
 button {
-    background-color: #D96C5F; /* Warm Terracotta/Rose */
+    background-color: #D96C5F;
     color: white;
     font-family: verdana;
     padding: 10px 15px;
@@ -74,11 +86,11 @@ button {
 }
 
 button:hover {
-    background-color: #C85A4D; /* Darker Terracotta */
+    background-color: #C85A4D;
 }
 
 footer {
-    background-color: rgba(255, 255, 255, 0.1); /* Glassy background */
+    background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
@@ -111,7 +123,7 @@ footer {
 .link1, .link2, .link3, .link4 {
     text-align: center;
     text-decoration: none;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 26, 77, 0.3);
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     padding: 20px;
@@ -119,7 +131,7 @@ footer {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .link1:hover, .link2:hover, .link3:hover, .link4:hover {
@@ -154,7 +166,7 @@ footer {
 }
 
 .link4 button {
-    background-color: #4a6fa5; /* Muted Teal */
+    background-color: #4a6fa5;
     color: white;
     padding: 8px 15px;
     border: none;
@@ -174,7 +186,7 @@ footer {
     align-items: center;
     margin: 10px 0;
     padding: 10px;
-    background: rgba(0, 26, 77, 0.05); /* Lighter navy */
+    background: rgba(0, 26, 77, 0.05);
     border-radius: 6px;
     transition: background 0.3s ease;
 }
@@ -204,7 +216,7 @@ footer {
 }
 
 .upload-btn {
-    background-color: #4CAF50; /* Keeping green for upload */
+    background-color: #4CAF50;
     color: white;
 }
 
@@ -214,7 +226,7 @@ footer {
 }
 
 .delete-btn {
-    background-color: #f44336; /* Keeping red for delete */
+    background-color: #f44336;
     color: white;
 }
 
@@ -230,7 +242,7 @@ footer {
 }
 
 .master-login-btn {
-    background-color: #D96C5F; /* Warm Terracotta/Rose */
+    background-color: #D96C5F;
     color: white;
     padding: 8px 16px;
     border: none;
@@ -247,7 +259,7 @@ footer {
 }
 
 .master-logout-btn {
-    background-color: #f44336; /* Red for logout */
+    background-color: #f44336;
     color: white;
     padding: 8px 16px;
     border: none;
@@ -285,7 +297,7 @@ footer {
 
 .question-papers2, .question-papers1, .question-papers3, 
 .study-materials2, .study-materials1, .study-materials3 {
-    background: rgba(74, 111, 165, 0.8); /* Muted Teal with transparency */
+    background: rgba(74, 111, 165, 0.8);
     padding: 40px;
     border-radius: 12px;
     font-family: Verdana;
