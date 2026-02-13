@@ -4,14 +4,15 @@ body {
     font-weight: 400;
     margin: 0;
     padding: 0;
-    background: #f5f5f0; /* Pale Mint/Grey */
+    background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center fixed;
+    background-size: cover;
     background-attachment: fixed;
     min-height: 100vh;
     color: #001a4d; /* Deep Navy */
 }
 
 header {
-    background-color: #001a4d; /* Deep Navy */
+    background-color: rgba(0, 26, 77, 0.8); /* Deep Navy with transparency */
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
@@ -32,6 +33,8 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .updates {
@@ -52,11 +55,13 @@ main {
 
 section {
     margin-bottom: 30px;
-    background: #FFFFFF;
+    background: rgba(255, 255, 255, 0.8); /* White with transparency */
     padding: 20px;
     border-radius: 40px;
     color: #001a4d; /* Deep Navy */
     box-shadow: 0 2px 5px rgb(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 button {
@@ -74,7 +79,7 @@ button:hover {
 }
 
 footer {
-    background-color: #001a4d; /* Deep Navy */
+    background-color: rgba(0, 26, 77, 0.8); /* Deep Navy with transparency */
     border: 1px solid rgba(145, 128, 128, 0.15);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
@@ -92,6 +97,8 @@ footer {
     font-size: large;
     padding: 10px;
     text-align: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .links {
@@ -105,12 +112,15 @@ footer {
 .link1, .link2, .link3, .link4 {
     text-align: center;
     text-decoration: none;
-    background-color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     padding: 20px;
     width: 200px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .link1:hover, .link2:hover, .link3:hover, .link4:hover {
@@ -126,11 +136,11 @@ footer {
 
 .link1 p, .link2 p, .link3 p {
     font-weight: bold;
-    color: #333;
+    color: #fff;
 }
 
 .link4 h3 {
-    color: #001a4d;
+    color: #fff;
     margin: 10px 0 5px 0;
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
@@ -139,7 +149,7 @@ footer {
 
 .link4 p {
     font-weight: 500;
-    color: #333;
+    color: #fff;
     font-size: 0.9rem;
     margin: 5px 0 15px 0;
 }
@@ -276,7 +286,7 @@ footer {
 
 .question-papers2, .question-papers1, .question-papers3, 
 .study-materials2, .study-materials1, .study-materials3 {
-    background: #4a6fa5; /* Muted Teal */
+    background: rgba(74, 111, 165, 0.8); /* Muted Teal with transparency */
     padding: 40px;
     border-radius: 12px;
     font-family: Verdana;
@@ -284,6 +294,9 @@ footer {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     text-align: center;
     font-size: large;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .upload-btn,
