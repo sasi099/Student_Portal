@@ -48,7 +48,7 @@ function handleLogin(event) {
     document.body.classList.add('master-logged-in');
     closeLoginModal();
     alert('✅ Successfully logged in as Master!');
-    updateUIForLoginState();
+    updateUploadButtons();
   } else {
     const errorEl = document.getElementById('loginError');
     if (errorEl) {
@@ -62,25 +62,31 @@ function masterLogout() {
   sessionStorage.setItem('masterLoggedIn', 'false');
   document.body.classList.remove('master-logged-in');
   alert('Logged out successfully');
-  updateUIForLoginState();
+  updateUploadButtons();
 }
 
-function updateUIForLoginState() {
-    const isMaster = isMasterLoggedIn();
-    document.body.classList.toggle('master-logged-in', isMaster);
-    
-    const editContainer = document.getElementById('update-edit-container');
-    if (editContainer) {
-        editContainer.style.display = isMaster ? 'block' : 'none';
-    }
-    // Show/hide master-only content
-    document.querySelectorAll('.master-only-content').forEach(el => {
-        el.style.display = isMaster ? 'block' : 'none';
-    });
-    
-    updateMasterLoginFooter();
+function updateUploadButtons() {
+  const isMaster = isMasterLoggedIn();
+  if (isMaster) {
+    document.body.classList.add('master-logged-in');
+  } else {
+    document.body.classList.remove('master-logged-in');
+  }
 }
 
+// Check for updates function
+function checkForUpdates() {
+  const msg = document.getElementById('updateMessage');
+  if (!msg) return;
+  // simple demonstration behavior
+  msg.textContent = 'No new updates found. Last checked: ' + new Date().toLocaleString();
+}
+
+/**
+ * showYear(yearId)
+ * - hides all .year-content and shows the one with id=yearId
+ * - marks matching sidebar button as active
+ */
 function showYear(yearId) {
   document.querySelectorAll('.year-content').forEach(s => s.classList.remove('active'));
   const target = document.getElementById(yearId);
@@ -92,282 +98,315 @@ function showYear(yearId) {
     btn.classList.toggle('active', onclick.includes(yearId));
   });
 
-  if (yearId === 'updates') {
-    loadAndUpdateMessage();
+  const content = document.querySelector('.content-area');
+  if (content) content.scrollTop = 0;
+}
+
+/**
+ * uploadSubjectFile(branch, subjectName)
+ * - checks if user is master, shows login if not
+ * - uploads file for specific subject to backend
+ */
+function uploadSubjectFile(branch, subjectName) {
+  if (!isMasterLoggedIn()) {
+    alert('⚠️ Only Master can upload documents. Please login first.');
+    showLoginModal();
+    return;
   }
-}
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.pdf, .doc, .docx, .txt, .ppt, .pptx, .xls, .xlsx, .jpg, .jpeg, .png';
 
-async function _doUpload(file, branch, category, subject) {
-    const formData = new FormData();
-    formData.append('file', file);
+  fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    const headers = {};
-    if (isMasterLoggedIn()) {
-        headers['X-Master-Username'] = MASTER_USERNAME;
-        headers['X-Master-Password'] = MASTER_PASSWORD;
-    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
 
-    try {
-        const response = await fetch(`/upload/${branch}/${category}`, {
-            method: 'POST',
-            body: formData,
-            headers: headers,
-        });
+      // store in localStorage under uploads mapping
+      const key = 'uploadedFiles';
+      let uploads = {};
+      try { uploads = JSON.parse(localStorage.getItem(key) || '{}'); } catch (err) { uploads = {}; }
+      if (!uploads[branch]) uploads[branch] = {};
+      uploads[branch][subjectName] = { dataUrl: dataUrl, filename: file.name, uploadedAt: new Date().toISOString() };
+      localStorage.setItem(key, JSON.stringify(uploads));
 
-        if (response.ok) {
-            const downloadUrl = `/download/${branch}/${category}/${file.name}`;
-            const key = 'uploadedFiles';
-            let uploads = JSON.parse(localStorage.getItem(key) || '{}');
-            if (!uploads[branch]) uploads[branch] = {};
-            uploads[branch][subject] = { dataUrl: downloadUrl, filename: file.name, uploadedAt: new Date().toISOString() };
-            localStorage.setItem(key, JSON.stringify(uploads));
-            alert('✅ File uploaded successfully for ' + subject + '!');
-        } else {
-            const error = await response.json();
-            alert('❌ Error uploading file: ' + (error.error || 'Unknown error'));
+      // Update the download link in the DOM
+      const listItems = document.querySelectorAll('ul li');
+      listItems.forEach(item => {
+        if (item.textContent.includes(subjectName)) {
+          const downloadBtn = item.querySelector('a');
+          if (downloadBtn) {
+            downloadBtn.href = dataUrl;
+            downloadBtn.download = file.name;
+          }
         }
-    } catch (err) {
-        console.error(err);
-        alert('❌ An error occurred while uploading the file.');
-    }
-}
+      });
 
-function uploadSubjectFile(event, branch, subjectName) {
-    if (!isMasterLoggedIn()) {
-        alert('⚠️ Only Master can upload documents. Please login first.');
-        showLoginModal();
-        return;
-    }
-
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png';
-
-    fileInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const listItem = event.target.closest('li.subject-item');
-        const list = listItem.closest('ul');
-        let category = list.id.toLowerCase().includes('question') ? 'Questions' : 'Materials';
-        _doUpload(file, branch, category, subjectName);
+      alert('✅ File uploaded successfully for ' + subjectName + '! (stored locally)');
+      updateUploadButtons();
     };
+    reader.readAsDataURL(file);
+  };
 
-    fileInput.click();
+  fileInput.click();
 }
 
-async function deleteSubjectFile(event, branch, subjectName) {
-    if (!isMasterLoggedIn()) {
-        alert('⚠️ Only Master can delete documents.');
-        return;
-    }
+/**
+ * deleteSubjectFile(branch, subjectName)
+ * - checks if user is master
+ * - deletes file for specific subject from backend
+ */
+async function deleteSubjectFile(branchOrSubject, subjectName) {
+  if (!isMasterLoggedIn()) {
+    alert('⚠️ Only Master can delete documents.');
+    return;
+  }
+  if (!confirm('Are you sure you want to delete the file for ' + subjectName + '?')) return;
 
-    if (!confirm('Are you sure you want to delete the file for ' + subjectName + '?')) return;
+  const key = 'uploadedFiles';
+  // support calls with either (branch, subjectName) or (subjectName)
+  let branch = branchOrSubject;
+  let subject = subjectName;
+  if (!subject) {
+    // branchOrSubject is actually the subject; detect branch from pathname
+    subject = branchOrSubject;
+    branch = window.location.pathname.includes('CSE') ? 'CSE' : 
+             window.location.pathname.includes('ECE') ? 'ECE' : 
+             window.location.pathname.includes('AIML') || window.location.pathname.includes('AI&ML') ? 'AI&ML' : 'ExtraSkills';
+  }
 
-    const key = 'uploadedFiles';
+  if (!confirm('Are you sure you want to delete the file for ' + subject + '?')) return;
 
-    try {
-        const uploads = JSON.parse(localStorage.getItem(key) || '{}');
-        const fileInfo = uploads[branch] && uploads[branch][subjectName];
+  try {
+    const uploads = JSON.parse(localStorage.getItem(key) || '{}');
+    if (uploads[branch] && uploads[branch][subject]) {
+      delete uploads[branch][subject];
+      localStorage.setItem(key, JSON.stringify(uploads));
 
-        if (fileInfo && fileInfo.filename) {
-            const listItem = event.target.closest('li.subject-item');
-            const list = listItem.closest('ul');
-            let category = list.id.toLowerCase().includes('question') ? 'Questions' : 'Materials';
-
-            const headers = {
-                'X-Master-Username': MASTER_USERNAME,
-                'X-Master-Password': MASTER_PASSWORD
-            };
-
-            const response = await fetch(`/delete/${branch}/${category}/${fileInfo.filename}`, {
-                method: 'DELETE',
-                headers: headers,
-            });
-
-            if (response.ok) {
-                delete uploads[branch][subjectName];
-                localStorage.setItem(key, JSON.stringify(uploads));
-                alert('✅ File deleted successfully for ' + subjectName + '.');
-            } else {
-                const error = await response.json();
-                alert('❌ Error deleting file: ' + (error.error || 'Unknown error'));
-            }
-        } else {
-            alert('⚠️ No uploaded file found for ' + subjectName + '.');
+      // Reset the download link in the DOM
+      const listItems = document.querySelectorAll('ul li');
+      listItems.forEach(item => {
+        if (item.textContent.includes(subjectName)) {
+          const downloadBtn = item.querySelector('a');
+          if (downloadBtn) {
+            downloadBtn.href = 'File not Uploaded';
+            downloadBtn.removeAttribute('download');
+          }
         }
-    } catch (err) {
-        console.error(err);
-        alert('❌ An error occurred while deleting the file.');
+      });
+
+      alert('✅ File deleted successfully for ' + subjectName + '.');
+      updateUploadButtons();
+      return;
     }
+  } catch (err) {
+    console.error(err);
+  }
+
+  alert('⚠️ No uploaded file found for ' + subject + '.');
 }
 
+/**
+ * loadSubjectFiles(branch)
+ * - loads all uploaded files for a branch from the backend
+ * - updates all download links across all pages
+ */
 function loadSubjectFiles(branch) {
+  // Load uploaded files from localStorage and update download links
   const key = 'uploadedFiles';
   let uploads = {};
   try { uploads = JSON.parse(localStorage.getItem(key) || '{}'); } catch (err) { uploads = {}; }
   const branchUploads = uploads[branch] || {};
 
-  document.querySelectorAll('.subject-item').forEach(item => {
-      const subjectName = item.querySelector('.subject-name span').textContent;
-      const fileInfo = branchUploads[subjectName];
-      const downloadLink = item.querySelector('a');
-
-      if (downloadLink && fileInfo && fileInfo.dataUrl) {
-          downloadLink.href = fileInfo.dataUrl;
-          downloadLink.download = fileInfo.filename || 'download';
+  const listItems = document.querySelectorAll('ul li');
+  listItems.forEach(item => {
+    for (const [subjectName, fileInfo] of Object.entries(branchUploads)) {
+      if (item.textContent.includes(subjectName)) {
+        const downloadBtn = item.querySelector('a');
+        if (downloadBtn && fileInfo && fileInfo.dataUrl) {
+          downloadBtn.href = fileInfo.dataUrl;
+          downloadBtn.download = fileInfo.filename || 'download';
+        }
       }
+    }
   });
 }
 
-function updateMasterLoginFooter() {
-  let footer = document.querySelector('.footer');
-  if (!footer) {
-    footer = document.createElement('footer');
-    footer.className = 'footer';
-    const contentArea = document.querySelector('.content-area');
-    if (contentArea) contentArea.appendChild(footer);
-    else document.body.appendChild(footer);
-  }
+// expose functions for inline onclick attributes
+window.showYear = showYear;
+window.uploadSubjectFile = uploadSubjectFile;
+window.deleteSubjectFile = deleteSubjectFile;
+window.checkForUpdates = checkForUpdates;
+window.showLoginModal = showLoginModal;
+window.closeLoginModal = closeLoginModal;
+window.masterLogout = masterLogout;
+window.isMasterLoggedIn = isMasterLoggedIn;
+window.loadSubjectFiles = loadSubjectFiles;
 
-  footer.innerHTML = isMasterLoggedIn() ? `
-      <span class="master-badge">✓ Master Logged In</span>
-      <button class="master-logout-btn" onclick="masterLogout()">Logout</button>
-    ` : `
-      <button class="master-login-btn" onclick="showLoginModal()">🔐 Master Login</button>
-    `;
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  updateUploadButtons();
+  convertSubjectListsToNewFormat();
+  createMasterLoginButton();
+  // Load subject files for current branch (from localStorage)
+  const branch = window.location.pathname.includes('CSE') ? 'CSE' : 
+                 window.location.pathname.includes('ECE') ? 'ECE' : 
+                 window.location.pathname.includes('AIML') || window.location.pathname.includes('AI&ML') ? 'AI&ML' : 'ExtraSkills';
+  if (branch) loadSubjectFiles(branch);
+});
+
+// Create master login/logout button in the header
+function createMasterLoginButton() {
+  // Check if button already exists
+  if (document.getElementById('masterLoginBtn')) return;
+  
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '12px';
+  container.style.right = '12px';
+  container.style.zIndex = '9999';
+  container.style.display = 'flex';
+  container.style.alignItems = 'center';
+  container.style.gap = '10px';
+  
+  if (isMasterLoggedIn()) {
+    const badge = document.createElement('span');
+    badge.className = 'master-badge';
+    badge.textContent = '✓ Master Logged In';
+    badge.style.backgroundColor = '#4CAF50';
+    badge.style.color = 'white';
+    badge.style.padding = '8px 12px';
+    badge.style.borderRadius = '4px';
+    badge.style.fontSize = '14px';
+    
+    const logoutBtn = document.createElement('button');
+    logoutBtn.id = 'masterLoginBtn';
+    logoutBtn.className = 'master-logout-btn';
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.style.padding = '8px 16px';
+    logoutBtn.style.backgroundColor = '#f44336';
+    logoutBtn.style.color = 'white';
+    logoutBtn.style.border = 'none';
+    logoutBtn.style.borderRadius = '4px';
+    logoutBtn.style.cursor = 'pointer';
+    logoutBtn.style.fontWeight = 'bold';
+    logoutBtn.onclick = function() {
+      masterLogout();
+      location.reload();
+    };
+    
+    container.appendChild(badge);
+    container.appendChild(logoutBtn);
+  } else {
+    const loginBtn = document.createElement('button');
+    loginBtn.id = 'masterLoginBtn';
+    loginBtn.className = 'master-login-btn';
+    loginBtn.textContent = '🔐 Master Login';
+    loginBtn.style.padding = '8px 16px';
+    loginBtn.style.backgroundColor = '#4a6fa5';
+    loginBtn.style.color = 'white';
+    loginBtn.style.border = 'none';
+    loginBtn.style.borderRadius = '4px';
+    loginBtn.style.cursor = 'pointer';
+    loginBtn.style.fontWeight = 'bold';
+    loginBtn.onclick = showLoginModal;
+    
+    container.appendChild(loginBtn);
+  }
+  
+  document.body.appendChild(container);
 }
 
+// Generic upload helper for existing "Upload" buttons which ask for a subject
+function uploadFile(branch) {
+  if (!isMasterLoggedIn()) {
+    alert('⚠️ Only Master can upload documents. Please login first.');
+    showLoginModal();
+    return;
+  }
+
+  const subject = prompt('Enter the exact subject name to attach this file to (copy from the list):');
+  if (!subject) return;
+  uploadSubjectFile(branch, subject);
+}
+
+// Convert old subject lists to new format with upload/delete buttons
 function convertSubjectListsToNewFormat() {
   const branch = window.location.pathname.includes('CSE') ? 'CSE' : 
                  window.location.pathname.includes('ECE') ? 'ECE' : 
                  window.location.pathname.includes('AIML') || window.location.pathname.includes('AI&ML') ? 'AI&ML' : 'CSE';
   
-  document.querySelectorAll('[id*="MaterialList"], [id*="QuestionList"]').forEach(list => {
+  const materialLists = document.querySelectorAll('[id*="MaterialList"]');
+  
+  materialLists.forEach(list => {
     list.querySelectorAll('li:not(.subject-item)').forEach(li => {
-      if (li.classList.contains('subject-item')) return;
-
-      const text = li.textContent.trim().split('\n')[0];
-      const originalLink = li.querySelector('a');
-      
-      const newLi = document.createElement('li');
-      newLi.className = 'subject-item';
-      
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'subject-name';
-      
-      const downloadLink = document.createElement('a');
-      downloadLink.href = originalLink ? originalLink.href : 'File not Uploaded';
-      if (originalLink && originalLink.hasAttribute('download')) {
-        downloadLink.setAttribute('download', originalLink.getAttribute('download'));
+      // Only convert if not already converted
+      if (!li.classList.contains('subject-item')) {
+        const text = li.textContent.trim().split('\n')[0];
+        const downloadLink = li.querySelector('a');
+        
+        // Create new structure
+        const newLi = document.createElement('li');
+        newLi.className = 'subject-item';
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'subject-name';
+        nameDiv.innerHTML = `<span>${text}</span><br>`;
+        
+        if (downloadLink) {
+          const newLink = downloadLink.cloneNode(true);
+          newLink.style.fontSize = '0.9rem';
+          newLink.style.color = '#6fa8d6';
+          const newBtn = newLink.querySelector('button');
+          if (newBtn) {
+            newBtn.style.padding = '4px 8px';
+            newBtn.style.fontSize = '0.8rem';
+          }
+          nameDiv.appendChild(newLink);
+        } else {
+          // Create download button if doesn't exist
+          const downloadLink = document.createElement('a');
+          downloadLink.href = 'File not Uploaded';
+          downloadLink.style.fontSize = '0.9rem';
+          downloadLink.style.color = '#6fa8d6';
+          downloadLink.innerHTML = '<button style="padding: 4px 8px; font-size: 0.8rem;">Download</button>';
+          nameDiv.appendChild(downloadLink);
+        }
+        
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'subject-actions';
+        
+        const uploadBtn = document.createElement('button');
+        uploadBtn.className = 'upload-btn';
+        uploadBtn.textContent = 'Upload';
+        uploadBtn.onclick = function() {
+          uploadSubjectFile(branch, text);
+        };
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = function() {
+          deleteSubjectFile(branch, text);
+        };
+        
+        actionsDiv.appendChild(uploadBtn);
+        actionsDiv.appendChild(deleteBtn);
+        
+        newLi.appendChild(nameDiv);
+        newLi.appendChild(actionsDiv);
+        
+        li.replaceWith(newLi);
       }
-      downloadLink.innerHTML = `<button class="download-btn">Download</button>`;
-
-      nameDiv.innerHTML = `<span>${text}</span><br>`;
-      nameDiv.appendChild(downloadLink);
-      
-      const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'subject-actions';
-      
-      const uploadBtn = document.createElement('button');
-      uploadBtn.className = 'upload-btn';
-      uploadBtn.textContent = 'Upload';
-      uploadBtn.onclick = (event) => uploadSubjectFile(event, branch, text);
-      
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.onclick = (event) => deleteSubjectFile(event, branch, text);
-      
-      actionsDiv.appendChild(uploadBtn);
-      actionsDiv.appendChild(deleteBtn);
-      
-      newLi.appendChild(nameDiv);
-      newLi.appendChild(actionsDiv);
-      
-      li.replaceWith(newLi);
     });
   });
 }
-
-function loadAndUpdateMessage() {
-    const updateMessageEl = document.getElementById('updateMessage');
-    const storedMessage = localStorage.getItem('updateAnnouncement');
-    if (updateMessageEl) {
-        updateMessageEl.textContent = storedMessage || 'No new updates found. Last checked: ' + new Date().toLocaleDateString();
-    }
-}
-
-function saveUpdateMessage() {
-    const textarea = document.getElementById('update-textarea');
-    if (textarea) {
-        localStorage.setItem('updateAnnouncement', textarea.value);
-        alert('✅ Update saved successfully!');
-        loadAndUpdateMessage(); // Refresh the displayed message
-    }
-}
-
-function loadSkillNames() {
-    document.querySelectorAll('.subject-item[data-skill-key]').forEach(item => {
-        const key = item.getAttribute('data-skill-key');
-        const savedName = localStorage.getItem(key);
-        if (savedName) {
-            item.querySelector('.skill-name').textContent = savedName;
-        }
-    });
-}
-
-function toggleSkillEdit(event) {
-    const button = event.target;
-    const item = button.closest('.subject-item');
-    const skillNameEl = item.querySelector('.skill-name');
-    const isEditing = skillNameEl.isContentEditable;
-
-    if (isEditing) {
-        skillNameEl.contentEditable = 'false';
-        button.textContent = 'Edit Name';
-        const key = item.getAttribute('data-skill-key');
-        localStorage.setItem(key, skillNameEl.textContent);
-        alert('✅ Skill name updated!');
-    } else {
-        skillNameEl.contentEditable = 'true';
-        button.textContent = 'Save';
-        skillNameEl.focus();
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  convertSubjectListsToNewFormat();
-  updateUIForLoginState();
-  loadSkillNames();
-
-  const branch = window.location.pathname.includes('CSE') ? 'CSE' : 
-                 window.location.pathname.includes('ECE') ? 'ECE' : 
-                 window.location.pathname.includes('AIML') || window.location.pathname.includes('AI&ML') ? 'AI&ML' : 'ExtraSkills';
-  if (branch) loadSubjectFiles(branch);
-
-  const firstYearButton = document.querySelector('.sidebar button');
-  if (firstYearButton) {
-      const firstYearId = firstYearButton.getAttribute('onclick').match(/\('(.*?)'\)/)[1];
-      showYear(firstYearId);
-  }
-
-  const saveBtn = document.getElementById('save-update-btn');
-  if (saveBtn) {
-      saveBtn.onclick = saveUpdateMessage;
-  }
-  
-  // Pre-fill textarea with current message if master is logged in
-  if (isMasterLoggedIn() && document.getElementById('update-textarea')) {
-      document.getElementById('update-textarea').value = localStorage.getItem('updateAnnouncement') || '';
+// Initialize on page load: apply master-logged-in class if needed
+window.addEventListener('load', () => {
+  if (isMasterLoggedIn()) {
+    document.body.classList.add('master-logged-in');
   }
 });
-
-window.showYear = showYear;
-window.uploadSubjectFile = uploadSubjectFile;
-window.deleteSubjectFile = deleteSubjectFile;
-window.showLoginModal = showLoginModal;
-window.closeLoginModal = closeLoginModal;
-window.masterLogout = masterLogout;
-window.handleLogin = handleLogin;
-window.toggleSkillEdit = toggleSkillEdit;

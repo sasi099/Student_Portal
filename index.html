@@ -1,34 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome to Sasi Academic Search</title>
-    <link rel="stylesheet" href="front-style.css" />
-  </head>
-  <body>
-    <ul class="bg-shape">
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-    </ul>
+<head>
+  <meta charset="UTF-8">
+  <title>Student Resource Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&family=Open+Sans:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="front-style.css">
+</head>
+<body>
+  <div class="container">
+    <style>
+      .container { position: relative; overflow: hidden; }
+      .logo { transition: transform 700ms cubic-bezier(.22,.8,.1,1); will-change: transform; display: block; margin: 0 auto; }
+      .move-up { transform: translateY(-440px) scale(0.9); }
 
-    <div class="container">
-      <img
-        src="Logo-removebg-preview.png"
-        alt="Sasi Academic Search Logo"
-        class="logo"
-      />
-      <h1>Welcome to Sasi Academic Search</h1>
-      <p>
-        Your one-stop platform for accessing academic resources, question papers,
-        and study materials for all departments.
-      </p>
-      <a href="main-page.html" class="btn">Get Started</a>
-    </div>
-  </body>
+      h1, p, .btn {
+        transition: opacity 400ms ease, transform 400ms ease;
+        transform-origin: center;
+      }
+      .fade-out { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const btn = document.querySelector('.btn');
+      const logo = document.querySelector('.logo');
+      const title = document.querySelector('h1');
+      const desc = document.querySelector('p');
+
+      if (!btn || !logo) return;
+
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        // start animations
+        logo.classList.add('move-up');
+        title.classList.add('fade-out');
+        desc.classList.add('fade-out');
+        btn.classList.add('fade-out');
+
+        // prevent double-clicks
+        btn.setAttribute('aria-disabled', 'true');
+
+        // wait for animations to finish, then navigate
+        const target = btn.getAttribute('href') || '/';
+        setTimeout(function () {
+          window.location.href = target;
+        }, 800);
+      });
+    });
+    </script>
+        <img src="uploads/Images/student_hub.png" alt="Site Logo" class="logo">
+    <h1>Student Resource Hub</h1>
+    <p>Your gateway to past papers, materials, and updates</p>
+    <a href="main-page.html" class="btn">Get Started</a>
+  </div>
+</body>
 </html>
